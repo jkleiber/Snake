@@ -8,6 +8,7 @@ import pygame
 import random
 from Cobra import Cobra
 from Block import Block
+from Wall import Wall
 from time import sleep
 
 #initialize pygame
@@ -15,11 +16,21 @@ pygame.init()
 
 RED = (255, 0, 0)
 BLUE = (0, 0, 255)
+DARK_GREEN = (0, 145, 34)
 WHITE = (255, 255, 255)
 
-screen_size = (3000, 1800)
-screen = pygame.display.set_mode(screen_size)
+#Are we running this from the Console or from Spyder?
+CONSOLE = False
 
+screen_size = (0, 0)
+
+if CONSOLE:
+    screen_size = (1200, 720)
+    Block.block_size = 20
+else:
+    screen_size = (3000, 1800)
+
+screen = pygame.display.set_mode(screen_size)
 pygame.display.set_caption("Snake")
 
 #set game running state
@@ -28,6 +39,9 @@ begin = False
 
 #setup the clock
 clock = pygame.time.Clock()
+
+#Create the wall
+wall = Wall(screen_size[0], screen_size[1])
 
 #Create the snake
 cobra = Cobra(200, 300)
@@ -51,9 +65,9 @@ def cook_food():
     y = 0
     
     while not food_cooked:
-        #get row and column for where the food block should go
-        col = random.randint(0, (screen_size[0] / Block.block_size) - 1)
-        row = random.randint(0, (screen_size[1] / Block.block_size) - 1)
+        #get row and column for where the food block should go. Avoid wall
+        col = random.randint(1, (screen_size[0] / Block.block_size) - 2)
+        row = random.randint(1, (screen_size[1] / Block.block_size) - 2)
         
         #convert to pixel units
         x = col * Block.block_size
@@ -89,16 +103,16 @@ def game_logic():
         
         #check to see if the snake left the screen (game over condition)
         #if off the left of the screen
-        if cobra.x < 0:
+        if cobra.x < Block.block_size:
             begin = False
         #if off the right of the screen
-        if cobra.x > screen_size[0] - Block.block_size:
+        if cobra.x > screen_size[0] - (2 * Block.block_size):
             begin = False
         #if off the top of the screen
-        if cobra.y < 0:
+        if cobra.y < Block.block_size:
             begin = False
         #if off the bottom of the screen
-        if cobra.y > screen_size[1] - Block.block_size:
+        if cobra.y > screen_size[1] - (2 * Block.block_size):
             begin = False
             
         #check to see if the snake ate itself (game over condition)
@@ -119,6 +133,7 @@ def game_logic():
 def drawing():
     cobra.draw(screen, RED)
     food_block.draw(screen, BLUE)
+    wall.draw(screen, DARK_GREEN)
 
 # GAME LOOP
 while playing:
@@ -142,6 +157,8 @@ while playing:
                     SNAKE_DIRECTION = 3
             elif event.key == pygame.K_RETURN:
                 begin = True
+            elif event.key == pygame.K_q:
+                playing = False
     
     #Game Logic
     game_logic()
@@ -159,4 +176,5 @@ while playing:
     clock.tick(10)
     
 #end the game
+pygame.display.quit()
 pygame.quit()
