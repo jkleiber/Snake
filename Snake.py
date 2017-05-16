@@ -10,14 +10,28 @@ from Cobra import Cobra
 from Block import Block
 from Wall import Wall
 from time import sleep
+from enum import Enum
 
 #initialize pygame
 pygame.init()
 
+#Normal
 RED = (255, 0, 0)
 BLUE = (0, 0, 255)
 DARK_GREEN = (0, 145, 34)
 WHITE = (255, 255, 255)
+
+#Retro
+RETRO_GREEN = (0, 255, 0)
+BLACK = (0, 0, 0)
+
+#Color Themes
+class Themes(Enum):
+    NORMAL = 0
+    RETRO = 1
+
+#Theme tracker 
+theme = Themes.NORMAL
 
 #Are we running this from the Console or from Spyder?
 CONSOLE = False
@@ -31,11 +45,19 @@ else:
     screen_size = (3000, 1800)
 
 screen = pygame.display.set_mode(screen_size)
-pygame.display.set_caption("Snake")
+pygame.display.set_caption("Snake | Press Enter To Begin... | Press Q to quit")
 
 #set game running state
 playing = True
-begin = False
+
+#Game State Enum
+class GameState(Enum):
+    START = 0
+    PLAYING = 1
+    GAME_OVER = 2
+
+#keep track of state
+game_state = GameState.START
 
 #setup the clock
 clock = pygame.time.Clock()
@@ -89,11 +111,11 @@ def cook_food():
 
 #Game Logic Function
 def game_logic():
-    global begin
+    global game_state
     global SNAKE_DIRECTION
     global food_ready
     
-    if begin:
+    if game_state == GameState.PLAYING:
         cobra.move_snake(SNAKE_DIRECTION)
         
         #generate a new block for the snake to eat if no such block exists yet
@@ -104,23 +126,33 @@ def game_logic():
         #check to see if the snake left the screen (game over condition)
         #if off the left of the screen
         if cobra.x < Block.block_size:
-            begin = False
+            game_state = GameState.GAME_OVER
         #if off the right of the screen
         if cobra.x > screen_size[0] - (2 * Block.block_size):
-            begin = False
+            game_state = GameState.GAME_OVER
         #if off the top of the screen
         if cobra.y < Block.block_size:
-            begin = False
+            game_state = GameState.GAME_OVER
         #if off the bottom of the screen
         if cobra.y > screen_size[1] - (2 * Block.block_size):
-            begin = False
+            game_state = GameState.GAME_OVER
             
         #check to see if the snake ate itself (game over condition)
+        if cobra.check_snakicide():
+            game_state = GameState.GAME_OVER
         
         #check to see if the snake ate a food block (add block to snake)
         if cobra.x == food_block.x and cobra.y == food_block.y:
             cobra.add_block()
-            food_ready = False  
+            food_ready = False
+            
+        #Show Current Score
+        pygame.display.set_caption("Snake | Score: " + str(cobra.get_score()))
+        
+    elif game_state == GameState.GAME_OVER:
+        pygame.display.set_caption("Snake | Final Score: " 
+                                   + str(cobra.get_score()) 
+                                   + " | Press S to set up new game, Q to Quit")
         
     else:
         #reset the snake's position and number of blocks
@@ -129,11 +161,19 @@ def game_logic():
         #set default direction to go right
         SNAKE_DIRECTION = 1
         
+        #Tell user to press enter to begin
+        pygame.display.set_caption("Snake | Press Enter To Begin... | Press Q to quit")
+        
 #Drawing function
 def drawing():
-    cobra.draw(screen, RED)
-    food_block.draw(screen, BLUE)
-    wall.draw(screen, DARK_GREEN)
+    if theme == Themes.NORMAL:
+        cobra.draw(screen, RED)
+        food_block.draw(screen, BLUE)
+        wall.draw(screen, DARK_GREEN)
+    elif theme == Themes.RETRO:
+        cobra.draw(screen, RETRO_GREEN)
+        food_block.draw(screen, RETRO_GREEN)
+        wall.draw(screen, RETRO_GREEN)
 
 # GAME LOOP
 while playing:
@@ -146,25 +186,40 @@ while playing:
             if event.key == pygame.K_UP:
                 if not SNAKE_DIRECTION == 2:
                     SNAKE_DIRECTION = 0
+                    break #we only care about one directional key event
             elif event.key == pygame.K_RIGHT:
                 if not SNAKE_DIRECTION == 3:
                     SNAKE_DIRECTION = 1
+                    break #we only care about one directional key event
             elif event.key == pygame.K_DOWN:
                 if not SNAKE_DIRECTION == 0:
                     SNAKE_DIRECTION = 2
+                    break #we only care about one directional key event
             elif event.key == pygame.K_LEFT:
                 if not SNAKE_DIRECTION == 1:
                     SNAKE_DIRECTION = 3
+                    break #we only care about one directional key event
             elif event.key == pygame.K_RETURN:
-                begin = True
+                if game_state == GameState.START:
+                    game_state = GameState.PLAYING
             elif event.key == pygame.K_q:
                 playing = False
+            elif event.key == pygame.K_r:
+                theme = Themes.RETRO
+            elif event.key == pygame.K_n:
+                theme = Themes.NORMAL
+            elif event.key == pygame.K_s:
+                game_state = GameState.START
+            
     
     #Game Logic
     game_logic()
     
     #Clear display
-    screen.fill(WHITE)
+    if theme == Themes.NORMAL:
+        screen.fill(WHITE)
+    elif theme == Themes.RETRO:
+        screen.fill(BLACK)
     
     #Drawings
     drawing()
