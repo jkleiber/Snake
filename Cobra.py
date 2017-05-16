@@ -101,3 +101,14 @@ class Cobra:
         new_block.queue.extend(last_block.queue)
         
         self.blocks.append(new_block)
+        
+    def get_score(self):
+        return len(self.blocks)
+    
+    #Has the snake eaten itself?
+    def check_snakicide(self):
+        for i in range(1, len(self.blocks)):
+            if self.blocks[0].x == self.blocks[i].x:
+                if self.blocks[0].y == self.blocks[i].y:
+                    return True
+        return False
